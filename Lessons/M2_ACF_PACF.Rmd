@@ -102,7 +102,9 @@ In this course we will also use *autoplot()* which is a ggplot() for time series
 Many of the functions we will use require a time series object. You can transform your data in a time series using the function *ts()*. Only the columns with reservoir inflow data should be transformed, not the ones with month and year. Your ts object is not a data frame, but like I said we will need it as a ts for some function we will explore in future scripts.
 
 ```{r}
-ts_inflow_data <- #####
+ts_inflow_data <- ts(inflow_data[,2:4], #don't want to include first column because data 
+                     start=c(1931,1), #need to specify the first observation (because this is monthly data only need to specify year and month)
+                     frequency=12) #monthly data so frequency is 12. daily would be 365. annual would be 1. We will talk about how to do hourly data. ts only works with only one frequency variable
 ts_inflow_data
 
 ```
@@ -113,7 +115,20 @@ Let's see the plots generated with *autoplot()*.
 
 ```{r}
 
-autoplot(ts_inflow_data) +
+autoplot(ts_inflow_data) + #don't need to specify aesthetics because it knows its a timeseries object. Could do this with ggplot but its much more set up with autoplot
+  xlab("Time") +
+  ylab("Inflow") +
+  labs(color="Reservoir")
+
+#H 1 only
+autoplot(ts_inflow_data[,1]) +
+  xlab("Time") +
+  ylab("Inflow") +
+  labs(color="Reservoir")
+
+#H 1 and 2
+autoplot(ts_inflow_data[,1],series = "HP1") +
+  autolayer(ts_inflow_data[,2],series = "HP2")+
   xlab("Time") +
   ylab("Inflow") +
   labs(color="Reservoir")
@@ -127,16 +142,19 @@ There are multiple ways to get acf and pacf plots in R. The default package "sta
 
 ```{r acf}
 # Option 1: The function acf() and pacf() is from package "stats"
-HP1_acf=
+HP1_acf=acf(ts_inflow_data[,1],lag.max = 40, plot = TRUE) #default type is correlation. can specify partial here or use pacf
+#shows lags between 0 and 3 (though 40 lines so the lags are not labeled as they should). Another reason to use Acf() instead
 
-HP1_pacf=
+HP1_pacf=pacf(ts_inflow_data[,1],lag.max = 40, plot = TRUE)
 
 #Option 2: Computing ACF and PACF with package "forecast"
+  #this one is a little cleaner
 
 #The next line will output a plot since we have plot=TRUE and also store the acf values in the object
-HP1_acf=
+#The PACF eventually levels out between the blue lines, with a few spikes due to the seasonality
+HP1_acf= Acf(ts_inflow_data[,1], lag.max = 40) #doesn't include 0, always real number lags
 
-HP1_pacf=
+HP1_pacf=Pacf(ts_inflow_data[,1], lag.max = 40)
   
 ```
 
