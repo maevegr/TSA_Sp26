@@ -109,7 +109,7 @@ Fixed!
 Many of the functions we will use require a time series object. You can transform your data in a time series using the function *ts()*. 
 
 ```{r}
-ts_inflow_data <- ts(inflow_data[,2:(2+nhydro-1)],frequency=12) 
+ts_inflow_data <- ts(inflow_data[,2:(2+nhydro-1)],frequency=12, start = c(1931,1)) 
 #note that we are only transforming columns with inflow data, not the date columns  #start=my_date[1],end=my_date[nobs],
 head(ts_inflow_data,15)
 ```
@@ -137,10 +137,19 @@ Let's identify and remove trend component. You start by fitting a linear model t
 
 ```{r}
 #Create vector t
-
-
+t <- c(1:nobs)
+#choose one HP
+iHP<- 15
 
 #Fit a linear trend to TS of iHP
+linear_trend_model <- lm(inflow_data[,iHP+1]~t)
+summary(linear_trend_model)
+
+#store regression coefficients
+
+beta0 <- as.numeric(linear_trend_model$coefficients[1]) #intercept
+
+beta1 <- as.numeric(linear_trend_model$coefficients[2]) #slope
 
 
 ```
@@ -148,8 +157,13 @@ Let's identify and remove trend component. You start by fitting a linear model t
 
 ```{r}
 #remove the trend from series
+detrend_inflow_data <- inflow_data[,iHP+1] - (beta0 + beta1*t)
 
+#convert into ts
+ts_detrend_inflow <- ts(detrend_inflow_data, frequency = 12, start = c(1931,1))
 
+autoplot(ts_inflow_data[,iHP])+
+  autolayer(ts_detrend_inflow)
 
 ```
 
