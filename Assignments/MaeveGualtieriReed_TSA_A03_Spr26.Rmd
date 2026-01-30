@@ -8,15 +8,6 @@ editor_options:
   chunk_output_type: console
 ---
 
-QUESTIONS:
-Units for de trended series
-Comparing detrended vs original PACF/ACF (renewables) Q5
-Q6 reasoning
-
-```{r}
-
-```
-
 ## Directions
 
 You should open the .rmd file corresponding to this assignment on RStudio. The file is available on our class repository on Github.
@@ -67,6 +58,7 @@ colnames(energy_data) <- read_col_names
 #make date column a date data type
 energy_data$Month <- as.Date(ymd(energy_data$Month))
 
+#Create a data frame structure with these two time series only.
 Renewable_Hydro <- energy_data %>% 
   select('Month','Total Renewable Energy Production','Hydroelectric Power Consumption')
 ```
@@ -97,8 +89,10 @@ hydro_ts_plot <- autoplot(ts_Rewenable_Hydro[,2]) +
 
 ```{r}
 #ACF
+#I use ggAcf and ggPacf so that I can plot with cowplot
 renew_acf= ggAcf(ts_Rewenable_Hydro[,1], lag.max = 40)+
   ggtitle("Renewables ACF")
+
 hydro_acf= ggAcf(ts_Rewenable_Hydro[,2], lag.max = 40)+
     ggtitle("Hydro ACF")
 ```
@@ -123,9 +117,9 @@ cowplot::plot_grid(hydro_ts_plot,hydro_acf,hydro_pacf, ncol = 3)
 
 From the plot in Q1, do the series Total Renewable Energy Production and Hydroelectric Power Consumption appear to have a trend? If yes, what kind of trend?
 
-Renewable Energy Production seems to have a season trend and an overall trend (increasing). There are regular intervals of peaks and troughs indicating the seasonal element. It looks like the peaks get relatively larger with time, indicating that this might be a multiplicative seasonal trend.
+Renewable Energy Production seems to have a seasonal trend and an overall trend (increasing). There are regular intervals of peaks and troughs indicating the seasonal element. Overall the production is increasing from the start to the end of the series. While it is not visible in the ACF, the seasonal trend component is visible in the PACF as there are peaks around the annual mark.
 
-Hydroelectric Power Consumption seems to have a clear seasonal trend. Again, there are clear peaks and troughs, but they seem to stay relatively constant. There might also be a slight overall decreasing trend.
+Hydroelectric Power Consumption seems to have a clear seasonal trend. There are clear peaks and troughs in the timeseries plot, ACF, and PACF. There might also be a slight overall decreasing trend.
 
 ### Q3: lm()
 
@@ -211,9 +205,9 @@ cowplot::plot_grid(renew_acf, renew_pacf, detrend_renew_acf,detrend_renew_pacf,n
 cowplot::plot_grid(hydro_acf, hydro_pacf, detrend_hydro_acf,detrend_hydro_pacf,ncol = 2)
 ```
 
-There are slight upticks at the year marks (12, 24, 36) in the detrended renewables ACF whereas the non-detrended ACF is a much smoother plot.
+There is not a significant difference in the ACF or the PACF for renewables or between the detrended and raw data. This indicates that the trend wasn't hiding a significant seasonal component and that instead maybe there is not a significant seasonal component.
 
-The hydro detrended vs original PACF and ACF are fairly similar, indicating that the trend component did not have a big impact on the data. This makes sense as while there was a significant coefficient found in the linear regression, it was very very slight. 
+The hydro detrended vs original PACF and ACF are also fairly similar. We can see that there is a clear seasonal component in the detrended and raw ACF/PACF so it might be that the trend component wasn't strong enough to hide additional seasonal correlation. This makes sense as while there was a significant coefficient found in the linear regression, it was very very slight. 
 ## Seasonal Component
 
 Set aside the detrended series and consider the original series again from Q1 to answer Q6 to Q8.
@@ -222,26 +216,102 @@ Set aside the detrended series and consider the original series again from Q1 to
 
 Just by looking at the time series and the acf plots, do the series seem to have a seasonal trend? No need to run any code to answer your question. Just type in you answer below.
 
-> Answer: The hydroelectric consumption timeseries definitely seems to have a seasonal trend. There are regular peaks and troughs equally spaced in the raw data. The ACF and PACF further support this as they both show strong correlation large lags. The renewable energy consumption is not as pronounced. The raw data shows some regular peaks and troughs but the ACF shows all positive values with a very slow decline. However, it's likely that the seasonality in the ACF is overshadowed by the strong overall trend computed in Q3. The PACF shows that there is likely some seasonality as some of the large lags show high positive and negative values.
+> Answer: The hydroelectric consumption timeseries definitely seems to have a seasonal trend. There are regular peaks and troughs equally spaced in the raw data. The ACF and PACF further support this as they both show strong correlation large lags. The renewable energy consumption is not as obvious. The raw data shows some regular peaks and troughs but the ACF shows all positive values with a very slow decline. However, just by looking at the ACF that includes the trend, it is possible that the seasonality is overshadowed by the strong overall trend computed in Q3. The PACF shows that there is likely some seasonality as some of the large lags show high positive and negative values.
 
 ### Q7
 
 Use function *lm()* to fit a seasonal means model (i.e. using the seasonal dummies) to the two time series. Ask R to print the summary of the regression. Interpret the regression output. From the results, which series have a seasonal trend? Do the results match you answer to Q6?
 ```{r}
 renew_dummies <- seasonaldummy(ts_Rewenable_Hydro[,1])
-deseason_renew_lm <- lm(ts_Rewenable_Hydro[,1]~renew_dummies)
-summary(deseason_renew_lm)
+renew_seasonal_means <- lm(ts_Rewenable_Hydro[,1]~renew_dummies)
+summary(renew_seasonal_means)
 
 hydro_dummies <- seasonaldummy(ts_Rewenable_Hydro[,2])
-deseason_hydro_lm <- lm(ts_Rewenable_Hydro[,2]~renew_dummies)
-summary(deseason_hydro_lm)
+hydro_seasonal_means <- lm(ts_Rewenable_Hydro[,2]~renew_dummies)
+summary(hydro_seasonal_means)
 ```
 
+The seasonal means model for the hydro data shows an overall p value of less than 0.05 and all months' coefficients are < 0.05 except for February. Therefore, we can conclude that the series has a seasonal component. This matches what I inferred in Q6.
+
+Renewable seasonal means model regression did not have a p value <0.05 and none of the coefficients were signficiant. We can not conclude that the series has a seasonal component. I thought that the renewable time series had a seasonal component.
 
 ### Q8
 
 Use the regression coefficients from Q7 to deseason the series. Plot the deseason series and compare with the plots from part Q1. Did anything change?
+```{r}
+#store coeff
+renew_int <- renew_seasonal_means$coefficients[1]
+renew_coeff <-renew_seasonal_means$coefficients[2:12]
+
+hydro_int <- hydro_seasonal_means$coefficients[1]
+hydro_coeff <-hydro_seasonal_means$coefficients[2:12]
+
+#renew seasonal
+renew_seasonal <- array(0,nrow(Renewable_Hydro))
+
+for(i in 1:nrow(renew_seasonal)){
+  renew_seasonal[i] <- renew_int+renew_coeff%*%renew_dummies[i,]
+}
+
+#remove renew seasonal
+renew_deseason <- Renewable_Hydro[1] - renew_seasonal
+
+renew_ts_deseason <- ts(renew_deseason, start=c(1973,1), 
+                     frequency=12)
+
+autoplot(renew_ts_deseason)
+
+#hydro seasonal
+hydro_seasonal <- array(0,nrow(Renewable_Hydro))
+
+for(i in 1:nrow(hydro_seasonal)){
+  hydro_seasonal[i] <- hydro_int+renew_coeff%*%hydro_dummies[i,]
+}
+ 
+#remove hydro seasonal
+hydro_deseason <- Renewable_Hydro[2] - hydro_seasonal
+
+hydro_ts_deseason <- ts(hydro_deseason, start=c(1973,1), 
+                     frequency=12)
+
+autoplot(hydro_ts_deseason)       
+
+```
+
+The renewable deseasoned plots is almost a perfectly straight upward line. There is not much variation aside from the upward trend without the seasonal component.
+
+The hydro deseasoned plot still shows some variability but what is most prevalent is the clear upward overall trend seen without the seasonal component. This is interesting because with the raw time series, the linear regression showed a significant negative slope. 
 
 ### Q9
 
 Plot ACF and PACF for the deseason series and compare with the plots from Q1. You may use plot_grid() again to get them side by side. Did the plots change? How?
+
+```{r}
+#renew
+deseas_renew_acf= ggAcf(renew_ts_deseason, lag.max = 40)+
+  ggtitle("Deseasoned Renewables ACF")
+
+deseas_renew_pacf= ggPacf(renew_ts_deseason, lag.max = 40)+
+  ggtitle("Deseasoned Renewables PACF")
+```
+
+```{r}
+#hydro
+deseas_hydro_acf= ggAcf(renew_ts_deseason, lag.max = 40)+
+  ggtitle("Deseasoned Hydro ACF")
+
+deseas_hydro_pacf= ggPacf(hydro_ts_deseason, lag.max = 40)+
+  ggtitle("Deseasoned Hydro PACF")
+```
+
+```{r}
+#renewables
+cowplot::plot_grid(renew_acf,renew_pacf, deseas_renew_acf,deseas_renew_pacf,ncol = 2)
+
+#hydro
+cowplot::plot_grid(hydro_acf,hydro_pacf, deseas_hydro_acf,deseas_hydro_pacf,ncol = 2)
+```
+
+The renewables deseasoned ACF looks very similar to the raw ACF. All values are near 1 and there is a slow decline. The deseasoned PACF shows less variability, which makes sense since we have removed the seasonal component which likely caused the spikes in the raw PACF.
+
+The hydro deseaseoned ACF looks very different. While in the raw ACF there was a clear sinusoidal shape, the deseasoned ACF has a slow decline and all positive values near 1. The deseasoned PACF still shows some variation, but not as much as the raw PACF, likely because the raw PACF was showing variability from the seasonal component.
