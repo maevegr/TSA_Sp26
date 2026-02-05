@@ -161,7 +161,7 @@ detrend_renew_plot<- autoplot(ts_detrend_renew) +
 
 detrend_renew_plot
 ```
-
+ Linear trend model might not be the best because the slope of the first part is quite different than the second part - we see a decrease and still a slight trend over time.
 
 ```{r}
 #Hydro
@@ -206,6 +206,9 @@ cowplot::plot_grid(hydro_acf, hydro_pacf, detrend_hydro_acf,detrend_hydro_pacf,n
 ```
 
 There is not a significant difference in the ACF or the PACF for renewables or between the detrended and raw data. This indicates that the trend wasn't hiding a significant seasonal component and that instead maybe there is not a significant seasonal component.
+
+**also that the detrended probably didn't do enough since we still see a very strong autocorrelation and slow decay
+**because the trend is so strong its hard to make assumptions about the seasonality
 
 The hydro detrended vs original PACF and ACF are also fairly similar. We can see that there is a clear seasonal component in the detrended and raw ACF/PACF so it might be that the trend component wasn't strong enough to hide additional seasonal correlation. This makes sense as while there was a significant coefficient found in the linear regression, it was very very slight. 
 ## Seasonal Component
