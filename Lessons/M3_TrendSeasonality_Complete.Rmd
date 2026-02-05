@@ -2,6 +2,8 @@
 title: "M3: Exercise"
 author: "Luana Lima"
 output: pdf_document
+editor_options: 
+  chunk_output_type: console
 ---
 
 ## Setting R code chunk options
@@ -346,7 +348,7 @@ ggplot(inflow_data_new_yearly, aes(x=my_year, y=inflow_data_yearly)) +
 Check for deterministic trend.
 
 ```{r}
-iHP <- 1
+iHP <- 4
 #Since I have seasonal data I cannot use the simple MannKendall()
 #another example of functions that need a ts object
 SMKtest <- SeasonalMannKendall(ts_inflow_data[,iHP])
