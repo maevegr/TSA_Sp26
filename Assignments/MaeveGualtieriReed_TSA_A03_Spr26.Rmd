@@ -252,14 +252,13 @@ hydro_coeff <-hydro_seasonal_means$coefficients[2:12]
 #renew seasonal
 renew_seasonal <- array(0,nrow(Renewable_Hydro))
 
-for(i in 1:nrow(renew_seasonal)){
-  renew_seasonal[i] <- renew_int+renew_coeff%*%renew_dummies[i,]
+for(i in 1:nrow(Renewable_Hydro)){
+  renew_seasonal[i] = Renewable_Hydro[i,2]-(renew_int+renew_coeff%*%renew_dummies[i,])
 }
 
-#remove renew seasonal
-renew_deseason <- Renewable_Hydro[1] - renew_seasonal
+#renew_deseason <- Renewable_Hydro[1] - renew_seasonal
 
-renew_ts_deseason <- ts(renew_deseason, start=c(1973,1), 
+renew_ts_deseason <- ts(renew_seasonal, start=c(1973,1), 
                      frequency=12)
 
 autoplot(renew_ts_deseason)
