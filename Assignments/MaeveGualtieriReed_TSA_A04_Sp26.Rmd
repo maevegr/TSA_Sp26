@@ -1,7 +1,7 @@
 ---
 title: "ENV 797 - Time Series Analysis for Energy and Environment Applications | Spring 2026"
 subtitle: "Assignment 4 - Due date 02/10/26"
-author: "Student Name"
+author: "Maeve Gualtieri-Reed"
 output: pdf_document
 geometry: margin=2.54cm
 editor_options: 
@@ -22,6 +22,15 @@ R packages needed for this assignment: "xlsx" or "readxl", "ggplot2", "forecast"
 
 ```{r message=FALSE, warning=FALSE}
 #Load/install required package here
+library(forecast)
+library(tseries)
+library(Kendall)
+library(dplyr)
+library(readxl)
+library(lubridate)
+library(ggplot2)
+library(cowplot)
+
 
 ```
 
@@ -31,8 +40,26 @@ Consider the same data you used for A3 from the spreadsheet "Table_10.1_Renewabl
 
 ```{r message=FALSE, warning=FALSE}
 #Importing data set - you may copy your code from A3
+#Importing data set
+energy_data <- read_excel("/home/guest/TSA_Sp26/Data/Table_10.1_Renewable_Energy_Production_and_Consumption_by_Source.xlsx",skip = 12, sheet="Monthly Data",col_names=FALSE)
+
+#Now let's extract the column names from row 11
+read_col_names <- read_excel("/home/guest/TSA_Sp26/Data/Table_10.1_Renewable_Energy_Production_and_Consumption_by_Source.xlsx",skip = 10,n_max = 1, sheet="Monthly Data",col_names=FALSE) 
+
+#Assign the column names to the data set
+colnames(energy_data) <- read_col_names
+
+#make date column a date data type
+energy_data$Month <- as.Date(ymd(energy_data$Month))
+
+#Create a data frame structure with these two time series only.
+Renewable <- energy_data %>% 
+  select('Month','Total Renewable Energy Production')
 
 
+ts_renewable<- ts(Renewable[,2], 
+                     start=c(1973,1), 
+                     frequency=12)
 ```
 
 
@@ -50,15 +77,45 @@ Difference the "Total Renewable Energy Production" series using function diff().
 Try differencing at lag 1 only once, i.e., make `lag=1` and `differences=1`. Plot the differenced series. Do the series still seem to have trend?
 
 ```{r}
+differenced_lag1<-diff(Renewable[[2]], lag=1,differences=1)
+ts_differenced_lag1<- ts(differenced_lag1, 
+                     start=c(1973,1), 
+                     frequency=12)
+
+ts_differenced_lag1_plot<- autoplot(ts_differenced_lag1) +
+  xlab("Time") +
+  ylab("Renewables Production (Trillion Btu) with Lag 1")+
+  ggtitle("Total US Renewable Energy Production, Differenced Lag 1")
+
+ts_differenced_lag1_plot
 
 ```
-
+There does not seem to be an overall trend. There seems to be more extreme differences (both negative and positive) in later years, but not a consistent positive or negative trend.
 
 ### Q2
 Copy and paste part of your code for A3 where you run the regression for Total Renewable Energy Production and subtract that from the original series. This should be the code for Q3 and Q4. make sure you use assign same name for the time series object that you had in A3, otherwise the code will not work.
 
 ```{r}
+t <- c(1:nrow(Renewable))
 
+renewable_lm <- lm(Renewable$`Total Renewable Energy Production` ~ t)
+summary(renewable_lm)
+renew_int <- as.numeric(renewable_lm$coefficients[1]) 
+renew_slope <- as.numeric(renewable_lm$coefficients[2])
+
+#renewables
+detrend_renew <- Renewable[,2] - (renew_int+renew_slope*t)
+
+ts_detrend_renew <- ts(detrend_renew, 
+                     start=c(1973,1), 
+                     frequency=12)
+
+detrend_renew_plot<- autoplot(ts_detrend_renew) +
+  xlab("Time") +
+  ylab("Renewable Energy Production  (Trillion Btu)")+
+  ggtitle("Detrended Renewable Energy Production")
+
+detrend_renew_plot
 ```
 
 ### Q3
@@ -69,33 +126,68 @@ Using autoplot() + autolayer() create a plot that shows the three series togethe
 What can you tell from this plot? Which method seems to have been more efficient in removing the trend?
 
 ```{r}
-
+Comparison_plot<- autoplot(ts_renewable, series = "Original")+
+  autolayer(ts_detrend_renew, series = "Detrended")+
+  autolayer(ts_differenced_lag1, series = "Differenced")+
+  xlab("Time")+
+  ylab("Renewable Energy Production (Trillion Btu)")+
+  ggtitle("Original, Detrended, and Differenced Renewable Energy Production")
+Comparison_plot
 ```
 
-> Answer: 
+> Answer: It seems that the differenced method removes the trend more effectively. The detrended line still shows a slight overall trend and has a significant dip, while the differenced line has variation but returns to 0.
 
 ### Q4
 Plot the ACF for the three series and compare the plots. Add the argument `ylim=c(-0.5,1)` to the autoplot() or Acf() function - whichever you are using to generate the plots - to make sure all three y axis have the same limits. Looking at the ACF which method do you think was more efficient in eliminating the trend? The linear regression or differencing?
 
 ```{r}
-
+plot_grid(
+  autoplot(Acf(ts_renewable, lag.max = 40, plot =FALSE))+
+    ggtitle("Renewable Original")+
+    ylim(-0.5,1),
+  autoplot(Acf(ts_detrend_renew, lag.max = 40, plot =FALSE))+
+    ggtitle("Renewable Detrended")+
+    ylim(-0.5,1),
+  autoplot(Acf(ts_differenced_lag1, lag.max = 40, plot =FALSE))+
+    ggtitle("Renewable Differenced")+
+    ylim(-0.5,1),
+  nrow = 1
+)
 ```
 
-> Answer: 
+> Answer: It seems that the differenced method is more effective because the ACF plot drops very quickly while in the lm detrended version, the ACF still has a very slow decline.
 
 ### Q5
 Compute the Seasonal Mann-Kendall and ADF Test for the original "Total Renewable Energy Production" series. Ask R to print the results. Interpret the results for both test. What is the conclusion from the Seasonal Mann Kendall test? What's the conclusion for the ADF test? Do they match what you observed in Q3 plot? Recall that having a unit root means the series has a stochastic trend. And when a series has stochastic trend we need to use differencing to remove the trend.
 
 ```{r}
+SMK_original<- SeasonalMannKendall(ts_renewable)
+summary(SMK_original)
 
+ADF_original<- adf.test(ts_renewable)
+ADF_original
 ```
 
-> Answer: 
+> Answer: The seasonal Mann Kendall resulted in a significant p value indicating that there is a trend in the data. However we need to use the ADF to determine if the series is a deterministic or stochastic trend. The ADF did not result in a significant p value which means we will retain our null hypothesis that there is a unit root and therefore a stochastic trend. This matches what I observed in the Q3 plot since its seemed that the differencing was more effective in removing the trend and differencing is required to remove a trend for stochastic data.
+
+**confused about how SMk and ADF relate
 
 ### Q6
 Aggregate the original "Total Renewable Energy Production" series by year. You can use the same procedure we used in class. Store series in a matrix where rows represent months and columns represent years. And then take the columns mean using function colMeans(). Recall the goal is the remove the seasonal variation from the series to check for trend. Convert the accumulates yearly series into a time series object and plot the series using autoplot().
 
 ```{r}
+#getting an error here. 2025 is not complete
+renew_matrix <- matrix(ts_renewable,byrow=FALSE,nrow=12)
+renew_data_yearly <- colMeans(renew_matrix)
+ts_yearly <- ts(renew_data_yearly,start=c(1973,1), 
+                     frequency=1)
+
+yearly_plot<- autoplot(ts_yearly) +
+  xlab("Time") +
+  ylab("Renewable Energy Production  (Trillion Btu)")+
+  ggtitle("Average Annual Renewable Energy Production")
+
+yearly_plot
 
 ```
 
@@ -103,7 +195,11 @@ Aggregate the original "Total Renewable Energy Production" series by year. You c
 Apply the Mann Kendall, Spearman correlation rank test and ADF. Are the results from the test in agreement with the test results for the monthly series, i.e., results for Q5?
 
 ```{r}
+SMK_yearly<- SeasonalMannKendall(ts_yearly)
+summary(SMK_yearly)
 
+ADF_yearly<- adf.test(ts_yearly)
+ADF_yearly
 ```
 
-> Answer: 
+> Answer: Yes, the SMK and ADF tests yielded the same results for the yearly data as they did for the original monthly data. The SMK was signficant, indicating a trend, and the ADF was not, indicating that there is a unit root and therefore a stochastic trend.
