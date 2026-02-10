@@ -2,6 +2,8 @@
 title: "M4: Outliers and Missing Data - Inflow Data"
 author: "Luana Lima"
 output: pdf_document
+editor_options: 
+  chunk_output_type: console
 ---
 
 ## Setting R code chunk options
@@ -106,7 +108,7 @@ decompose_inflow_data <- decompose(ts_inflow_data[,iHP],"additive")
 plot(decompose_inflow_data)
 
 #Inspect random component
-inflow_random <- decompose_inflow_data$random   
+inflow_random <- decompose_inflow_data$random
 mean_inflow <- mean(inflow_random)  
 sd_inflow <- sd(inflow_random)
 

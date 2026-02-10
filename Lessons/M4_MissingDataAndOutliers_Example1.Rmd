@@ -2,6 +2,8 @@
 title: "M4: Outliers and Missing Data - Wind Speed Data"
 author: "Luana Lima"
 output: pdf_document
+editor_options: 
+  chunk_output_type: console
 ---
 
 

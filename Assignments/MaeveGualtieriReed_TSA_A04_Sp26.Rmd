@@ -162,21 +162,19 @@ Compute the Seasonal Mann-Kendall and ADF Test for the original "Total Renewable
 
 ```{r}
 SMK_original<- SeasonalMannKendall(ts_renewable)
-summary(SMK_original)
+SMK_original
 
 ADF_original<- adf.test(ts_renewable)
 ADF_original
 ```
 
-> Answer: The seasonal Mann Kendall resulted in a significant p value indicating that there is a trend in the data. However we need to use the ADF to determine if the series is a deterministic or stochastic trend. The ADF did not result in a significant p value which means we will retain our null hypothesis that there is a unit root and therefore a stochastic trend. This matches what I observed in the Q3 plot since its seemed that the differencing was more effective in removing the trend and differencing is required to remove a trend for stochastic data.
-
-**confused about how SMk and ADF relate
+> Answer: The seasonal Mann Kendall resulted in a significant p value indicating that there is a trend in the data. However we need to use the ADF to determine if the series is a stochastic trend. The ADF did not result in a significant p value which means we will retain our null hypothesis that there is a unit root and therefore a stochastic trend. This matches what I observed in the Q3 plot since its seemed that the differencing was more effective in removing the trend and differencing is required to remove a trend for stochastic data.
 
 ### Q6
 Aggregate the original "Total Renewable Energy Production" series by year. You can use the same procedure we used in class. Store series in a matrix where rows represent months and columns represent years. And then take the columns mean using function colMeans(). Recall the goal is the remove the seasonal variation from the series to check for trend. Convert the accumulates yearly series into a time series object and plot the series using autoplot().
 
 ```{r}
-#getting an error here. 2025 is not complete
+#take the mean of each year
 renew_matrix <- matrix(ts_renewable,byrow=FALSE,nrow=12)
 renew_data_yearly <- colMeans(renew_matrix)
 ts_yearly <- ts(renew_data_yearly,start=c(1973,1), 
@@ -196,7 +194,7 @@ Apply the Mann Kendall, Spearman correlation rank test and ADF. Are the results 
 
 ```{r}
 SMK_yearly<- SeasonalMannKendall(ts_yearly)
-summary(SMK_yearly)
+SMK_yearly
 
 ADF_yearly<- adf.test(ts_yearly)
 ADF_yearly
