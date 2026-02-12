@@ -77,6 +77,7 @@ Difference the "Total Renewable Energy Production" series using function diff().
 Try differencing at lag 1 only once, i.e., make `lag=1` and `differences=1`. Plot the differenced series. Do the series still seem to have trend?
 
 ```{r}
+# I could have just used the renewable ts rather than differencing the raw and then turning into ts
 differenced_lag1<-diff(Renewable[[2]], lag=1,differences=1)
 ts_differenced_lag1<- ts(differenced_lag1, 
                      start=c(1973,1), 
@@ -157,6 +158,8 @@ plot_grid(
 
 > Answer: It seems that the differenced method is more effective because the ACF plot drops very quickly while in the lm detrended version, the ACF still has a very slow decline.
 
+Also more clear seasonal spikes
+
 ### Q5
 Compute the Seasonal Mann-Kendall and ADF Test for the original "Total Renewable Energy Production" series. Ask R to print the results. Interpret the results for both test. What is the conclusion from the Seasonal Mann Kendall test? What's the conclusion for the ADF test? Do they match what you observed in Q3 plot? Recall that having a unit root means the series has a stochastic trend. And when a series has stochastic trend we need to use differencing to remove the trend.
 
@@ -193,7 +196,8 @@ yearly_plot
 Apply the Mann Kendall, Spearman correlation rank test and ADF. Are the results from the test in agreement with the test results for the monthly series, i.e., results for Q5?
 
 ```{r}
-SMK_yearly<- SeasonalMannKendall(ts_yearly)
+#should have used the mannkendall rather than seasonal mann kendall here becuase we removed the seasonal component by taking the annual average
+SMK_yearly<- MannKendall(ts_yearly)
 SMK_yearly
 
 ADF_yearly<- adf.test(ts_yearly)
