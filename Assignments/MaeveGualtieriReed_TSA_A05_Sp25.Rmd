@@ -74,7 +74,13 @@ You may either filter out the “Not Available” rows and then convert the colu
 Important: Note that we dropping the missing observations instead of interpolating is becasue they only happen in the beginning of the series!
 
 ```{r}
+solar_wind <- energy_data %>% 
+  select("Month","Solar Energy Consumption","Wind Energy Consumption") %>% 
+  filter(`Solar Energy Consumption` != "Not Available")
 
+solar_wind$`Solar Energy Consumption`<-as.numeric(solar_wind$`Solar Energy Consumption`)
+solar_wind$`Wind Energy Consumption`<-as.numeric(solar_wind$`Wind Energy Consumption`)
+solar_wind$Month <- as.Date(ymd(solar_wind$Month))
 
 ```
 
@@ -83,7 +89,23 @@ Important: Note that we dropping the missing observations instead of interpolati
 Plot the Solar and Wind energy consumption over time using ggplot. Plot each series on a separate graph. No need to add legend. Add informative names to the y axis using `ylab()`. Explore the function `scale_x_date()` on ggplot and see if you can change the x axis to improve your plot. Hint: use `scale_x_date(date_breaks = "5 years", date_labels = "%Y")")`
 
 ```{r}
+solar_raw <- ggplot(solar_wind, aes(x = Month, y = `Solar Energy Consumption`))+
+  geom_line()+
+  xlab("Date")+
+  ggtitle("US Solar Energy Consumption")+
+  ylab("Solar Energy Consumption (Trillion Btu)")+
+  scale_x_date(date_breaks = "5 years", date_labels = "%Y")
 
+solar_raw
+
+wind_raw <- ggplot(solar_wind, aes(x = Month, y = `Wind Energy Consumption`))+
+  geom_line()+
+  xlab("Date")+
+  ggtitle("US Wind Energy Consumption")+
+  ylab("Wind Energy Consumption (Trillion Btu)")+
+  scale_x_date(date_breaks = "5 years", date_labels = "%Y")
+
+wind_raw
 ```
 
 ### Q3
@@ -91,9 +113,19 @@ Plot the Solar and Wind energy consumption over time using ggplot. Plot each ser
 Now plot both series in the same graph, also using ggplot(). Use function `scale_color_manual()` to manually add a legend to ggplot. Make the solar energy consumption red and wind energy consumption blue. Add informative name to the y axis using `ylab("Energy Consumption)`. And use function `scale_x_date()` to set x axis breaks every 5 years.
 
 ```{r}
+solar_wind_plot <- ggplot(solar_wind, aes(x = Month))+
+  geom_line(aes( y = `Solar Energy Consumption`,color = "Solar"))+
+  geom_line(aes( y = `Wind Energy Consumption`,color = "Wind"))+
+  scale_color_manual(values = c(
+    "Solar" = "red",
+    "Wind" = "blue"))+
+  labs(title = "US Wind and Solar Consumption",color = "Energy Type")+
+  ylab("Energy Consumption (Trillion Btu)")+
+  xlab("Date")+
+  scale_x_date(date_breaks = "5 years", date_labels = "%Y")
+  
 
-
-
+solar_wind_plot
 ```
 
 
@@ -113,9 +145,22 @@ Additional info on `decompose()`.
 Transform wind and solar series into a time series object and apply the decompose function on them using the additive option, i.e., `decompose(ts_data, type = "additive")`. What can you say about the trend component? What about the random component? Does the random component look random? Or does it appear to still have some seasonality on it?
 
 ```{r}
+ts_solar<- ts(solar_wind[,2], 
+                     start=c(1984,1), 
+                     frequency=12)
 
+ts_wind<- ts(solar_wind[,3], 
+                     start=c(1984,1), 
+                     frequency=12)
+
+solar_decompose_a <- decompose(ts_solar, "additive")
+plot(solar_decompose_a)
+
+wind_decompose_a <- decompose(ts_wind, "additive")
+plot(wind_decompose_a)
 ```
 
+Both series seems to have a very clear upward trend component. While the random component is definitely centered around 0 in both series, there seems to be regular intervals of increasing and decreasing, though the peaks and troughs vary. In the solar data, this regularity seems very consistent, with the peaks and troughs steadily increasing in the last 10 years. In the wind data, there are very regular cycles until around 2008 and then while there is still some cycling it is less symmetrical. There may still be some seasonality in the random component
 
 ### Q5
 
@@ -123,23 +168,44 @@ Use the decompose function again but now change the type of the seasonal compone
 
 ```{r}
 
+solar_decompose_m <- decompose(ts_solar, "multiplicative")
+plot(solar_decompose_m)
+
+wind_decompose_m<- decompose(ts_wind, "multiplicative")
+plot(wind_decompose_m)
 ```
+
+The random component with the multiplicative method seems more random than the additive method. In the solar series, there still seem to be some symmetrical cycles between 1990 and 2010, but much less obvious than the additive method. The wind series random component still varies up and down but there does not seem to be any sort of regular pattern left.
 
 ### Q6
 
 When fitting a model to this data, do you think you need all the historical data? Think about the data from 80s, 90s and early 20s. Are there any information from those years we might need to forecast the next six months of Solar and/or Wind consumption. Explain your response.
 
-> Answer:
+> Answer: The seasonal component of these earlier data points might be helpful since they likely depend a lot on weather, which should (ignoring climate change) have similar patterns in the future. However, I would imagine that the industry trends are very different now than compared to the early 2000s and before. Likely looking at the more recent overall trend pattern in the last 10 years will be more helpful for predicting the future than the trend before then. 
 
 ### Q7
 
 Create a new time series object where historical data starts on January 2014. Hint: use `filter()` function so that you don't need to point to row numbers, .i.e, `filter(xxxx, year(Date) >= 2014 )`. Apply the decompose function `type=additive` to this new time series. Comment on the results. Does the random component look random? 
 
 ```{r}
+recent_solarwind <- solar_wind %>% 
+  filter(year(Month)>=2014)
 
+ts_solar_recent<- ts(recent_solarwind[,2], 
+                     start=c(2014,1), 
+                     frequency=12)
+ts_wind_recent<- ts(recent_solarwind[,3], 
+                     start=c(2014,1), 
+                     frequency=12)
+
+solar_decomp_recent <- decompose (ts_solar_recent, "additive")
+plot(solar_decomp_recent)
+
+wind_decomp_recent <- decompose (ts_wind_recent, "additive")
+plot(wind_decomp_recent)
 ```
 
-> Answer:
+> Answer:The random component looks much more random. There don't seem to be any periods in either series of regular patterns or cycles. There still seems to be a significant trend component in both series
 
 ## Identify and Remove outliers
 
@@ -148,15 +214,47 @@ Create a new time series object where historical data starts on January 2014. Hi
 Apply the `tsclean()` to both time series object you created on Q4. Did the function removed any outliers from the series? Hint: Use `autoplot()` to check if there is difference between cleaned series and original series.
 
 ```{r}
+clean_solar <- tsclean(ts_solar)
+clean_wind <- tsclean(ts_wind)
 
+solar_comparison<- autoplot(ts_solar, series = "Original")+
+  autolayer(clean_solar, series = "Cleaned")+
+  xlab("Date")+
+  ylab("Solar Energy Consumption (Trillion Btu)")+
+  ggtitle("Original and Cleaned Solar Energy Consumption")
+solar_comparison
+
+wind_comparison<- autoplot(ts_wind, series = "Original")+
+  autolayer(clean_wind, series = "Cleaned")+
+  xlab("Date")+
+  ylab("Wind Energy Consumption (Trillion Btu)")+
+  ggtitle("Original and Cleaned Wind Energy Consumption")
+wind_comparison
 ```
+
+Both series removed a lot of outliers, particularly in the years since 2015. The cleaned lines are far more linear than the original lines which oscillate up and down significantly. 
 
 ### Q9
 
 Redo number Q8 but now with the time series you created on Q7, i.e., the series starting in 2014. Using what `autoplot()` again what happened now? Did the function removed any outliers from the series?
 
 ```{r}
+clean_solar_recent <- tsclean(ts_solar_recent)
+clean_wind_recent <- tsclean(ts_wind_recent)
 
+solar_comparison_recent<- autoplot(ts_solar_recent, series = "Original")+
+  autolayer(clean_solar_recent, series = "Cleaned")+
+  xlab("Date")+
+  ylab("Solar Energy Consumption (Trillion Btu)")+
+  ggtitle("Original and Cleaned Solar Energy Consumption Since 2014")
+solar_comparison_recent
+
+wind_comparison_recent<- autoplot(ts_wind_recent, series = "Original")+
+  autolayer(clean_wind_recent, series = "Cleaned")+
+  xlab("Date")+
+  ylab("Wind Energy Consumption (Trillion Btu)")+
+  ggtitle("Original and Cleaned Wind Energy Consumption Since 2014")
+wind_comparison_recent
 ```
 
-> Answer:
+> Answer: Using data only since 2014, the tsclean() function did not remove as many outliers. In the wind data, by looking at the comparison plot, there doesn't seem to be any outliers that were removed. In the solar data, there were some outliers removed in 2025 but otherwise the cleaned and original series look the same. 
