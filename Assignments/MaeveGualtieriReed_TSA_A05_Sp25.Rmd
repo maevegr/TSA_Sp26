@@ -154,10 +154,11 @@ ts_wind<- ts(solar_wind[,3],
                      frequency=12)
 
 solar_decompose_a <- decompose(ts_solar, "additive")
-plot(solar_decompose_a)
+autoplot(solar_decompose_a, main = "Solar Decomposition - Additive")
+#the smaller the bar, the more significant the component is. ie don't have to zoom in as much
 
 wind_decompose_a <- decompose(ts_wind, "additive")
-plot(wind_decompose_a)
+autoplot(wind_decompose_a, main = "Wind Decomposition - Additive")
 ```
 
 Both series seems to have a very clear upward trend component. While the random component is definitely centered around 0 in both series, there seems to be regular intervals of increasing and decreasing, though the peaks and troughs vary. In the solar data, this regularity seems very consistent, with the peaks and troughs steadily increasing in the last 10 years. In the wind data, there are very regular cycles until around 2008 and then while there is still some cycling it is less symmetrical. There may still be some seasonality in the random component
@@ -169,10 +170,11 @@ Use the decompose function again but now change the type of the seasonal compone
 ```{r}
 
 solar_decompose_m <- decompose(ts_solar, "multiplicative")
-plot(solar_decompose_m)
+#close to zero at the beginning of the data accounts for the high variation in random series at the beginning
+autoplot(solar_decompose_m, main = "Solar decomposition - multiplicative")
 
 wind_decompose_m<- decompose(ts_wind, "multiplicative")
-plot(wind_decompose_m)
+autoplot(wind_decompose_m, main = "Wind decomp - multiplicative")
 ```
 
 The random component with the multiplicative method seems more random than the additive method. In the solar series, there still seem to be some symmetrical cycles between 1990 and 2010, but much less obvious than the additive method. The wind series random component still varies up and down but there does not seem to be any sort of regular pattern left.
@@ -199,10 +201,10 @@ ts_wind_recent<- ts(recent_solarwind[,3],
                      frequency=12)
 
 solar_decomp_recent <- decompose (ts_solar_recent, "additive")
-plot(solar_decomp_recent)
+autoplot(solar_decomp_recent, main = "recent solar decomp-additive")
 
 wind_decomp_recent <- decompose (ts_wind_recent, "additive")
-plot(wind_decomp_recent)
+autoplot(wind_decomp_recent, main = "rencent wind decomp-additive")
 ```
 
 > Answer:The random component looks much more random. There don't seem to be any periods in either series of regular patterns or cycles. There still seems to be a significant trend component in both series
@@ -232,7 +234,7 @@ wind_comparison<- autoplot(ts_wind, series = "Original")+
 wind_comparison
 ```
 
-Both series removed a lot of outliers, particularly in the years since 2015. The cleaned lines are far more linear than the original lines which oscillate up and down significantly. 
+Both series removed the seasonal component, particularly in the years since 2015. The cleaned lines are far more linear than the original lines which oscillate up and down significantly. 
 
 ### Q9
 
