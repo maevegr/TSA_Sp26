@@ -99,7 +99,7 @@ plot_grid(
 
 > Answer:The models with either AR or MA components are somewhat identifiable though could cause some confusion. For ARMA(1,0), the PACF shows a significant spike at lag 1 and then the rest of the values are within the blue lines. For purely AR models, the PACF tells us what order the model is based on the cut off value. Here, the cutoff and the AR order are 1. The ACF for this model does not have a very obvious slow decay, but there is still some decay rather than a clear cut off so I would likely have identified this model as AR(1)
 For ARMA(0,1), the ACF seems to have a cut off at lag 1 but there are still some significant peaks after. The PACF does not have a clear cut off either and seems to have a slow decay. Because neither has a clear cut off I might have identified this as an ARMA model.
-The ARMA(1,1) ACF could be interpreted as having 2 significant peaks and the PACF could be interpreted as having 2 significant peaks. Purely AR or MA models don't have significant peaks for both ACF and PACF so I would have identified this as an ARMA model, although I wouldn't have been able to identify the order. 
+The ARMA(1,1) ACF could be interpreted as having 2 significant peaks and the PACF could be interpreted as having 2 significant peaks. Purely AR or MA models don't have significant peaks for both ACF and PACF so I would have identified this as an ARMA model, although, as with all ARMA models, I wouldn't have been able to identify the order from the ACF and PACF. 
 
 (e) Compare the PACF values R computed with the values you provided for the lag 1 correlation coefficient, i.e., does $\phi=0.6$ match what you see on PACF for ARMA(1,0), and ARMA(1,1)? Should they match?
 
@@ -160,15 +160,19 @@ print(Pacf(ARMA11.b, lag.max = 10))
 Consider the ARIMA model $y_t=0.7*y_{t-1}-0.25*y_{t-12}+a_t-0.1*a_{t-1}$
 
 (a) Identify the model using the notation ARIMA$(p,d,q)(P,D,Q)_ s$, i.e., identify the integers $p,d,q,P,D,Q,s$ (if possible) from the equation.
->p = 1
+
+
+p = 1
 P = 1
 q = 1
-d is not identifiable from the equation
+
+### No constant so d or D?
 
 
 (b) Also from the equation what are the values of the parameters, i.e., model coefficients.
-> AR coefficients = 0.7, -0.25
-> MA coefficient = -0.1
+AR coefficient = 0.7, 
+SAR coefficient = -0.25
+MA coefficient = -0.1
 ## Q4
 
 Simulate a seasonal ARIMA$(0, 1)\times(1, 0)_{12}$ model with $\phi =0 .8$ and $\theta = 0.5$ using the `sim_sarima()` function from package `sarima`. The $12$ after the bracket tells you that $s=12$, i.e., the seasonal lag is 12, suggesting monthly data whose behavior is repeated every 12 months. You can generate as many observations as you like. Note the Integrated part was omitted. It means the series do not need differencing, therefore $d=D=0$. Plot the generated
