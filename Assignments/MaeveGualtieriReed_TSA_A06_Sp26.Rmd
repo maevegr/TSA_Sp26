@@ -1,7 +1,7 @@
 ---
 title: "ENV 797 - Time Series Analysis for Energy and Environment Applications | Spring 2025"
 subtitle: "Assignment 6 - Due date 02/27/25"
-author: "Student Name"
+author: "Maeve Gualtieri-Reed"
 output: pdf_document
 geometry: margin=2.54cm
 editor_options: 
@@ -20,7 +20,7 @@ When you have completed the assignment, **Knit** the text and code into a single
 
 R packages needed for this assignment: "ggplot2", "forecast", "tseries" and "sarima". Install these packages, if you haven't done yet. Do not forget to load them before running your script, since they are NOT default packages.
 
-```{r}
+```{r echo=TRUE}
 #Load/install required package here
 library(lubridate)
 library(ggplot2)
@@ -30,6 +30,8 @@ library(tseries)
 library(outliers)
 library(tidyverse)
 library(cowplot)
+#install.packages("sarima")
+library(sarima)
 
 ```
 
@@ -79,9 +81,9 @@ autoplot(ARMA11)+
 
 ```{r}
 plot_grid(
-  autoplot(Acf(ARMA10, lag.max=40),main = "ARMA(1,0)"),
-  autoplot(Acf(ARMA01, lag.max=40), main = "ARMA(0,1)"),
-  autoplot(Acf(ARMA11, lag.max=40),main = "ARMA(1,1)") 
+  autoplot(Acf(ARMA10, lag.max=40, plot = FALSE),main = "ARMA(1,0)"),
+  autoplot(Acf(ARMA01, lag.max=40, plot = FALSE), main = "ARMA(0,1)"),
+  autoplot(Acf(ARMA11, lag.max=40, plot = FALSE),main = "ARMA(1,1)") 
 )
 ```
 
@@ -89,9 +91,9 @@ plot_grid(
 
 ```{r}
 plot_grid(
-  autoplot(Pacf(ARMA10, lag.max=40),main = "ARMA(1,0)"),
-  autoplot(Pacf(ARMA01, lag.max=40), main = "ARMA(0,1)"),
-  autoplot(Pacf(ARMA11, lag.max=40),main = "ARMA(1,1)") 
+  autoplot(Pacf(ARMA10, lag.max=40, plot = FALSE),main = "ARMA(1,0)"),
+  autoplot(Pacf(ARMA01, lag.max=40, plot = FALSE), main = "ARMA(0,1)"),
+  autoplot(Pacf(ARMA11, lag.max=40, plot = FALSE),main = "ARMA(1,1)") 
 )
 ```
 
@@ -101,9 +103,15 @@ plot_grid(
 For ARMA(0,1), the ACF seems to have a cut off at lag 1 but there are still some significant peaks after. The PACF does not have a clear cut off either and seems to have a slow decay. Because neither has a clear cut off I might have identified this as an ARMA model.
 The ARMA(1,1) ACF could be interpreted as having 2 significant peaks and the PACF could be interpreted as having 2 significant peaks. Purely AR or MA models don't have significant peaks for both ACF and PACF so I would have identified this as an ARMA model, although, as with all ARMA models, I wouldn't have been able to identify the order from the ACF and PACF. 
 
-(e) Compare the PACF values R computed with the values you provided for the lag 1 correlation coefficient, i.e., does $\phi=0.6$ match what you see on PACF for ARMA(1,0), and ARMA(1,1)? Should they match?
+*Note that when I knit the simulation is re-run so my comments may not match the ACF/PACF plots on the knitted document
 
-> Answer: The PACF values for ARMA (1,0) and ARMA(1,1) do not match. The ARMA(1,0) PACF lag 1 is close to its coefficient (0.6), but not exactly because the AR equation also includes an error term. The ARMA(1,1) PACF at lag 1 is not near 0.6 (it's closer to 0.8). This model does incorporate the AR component with the 0.6 coefficient and error term, but also includes the MA component and it's coefficient (0.9). 
+(e) Compare the PACF values R computed with the values you provided for the lag 1 correlation coefficient, i.e., does $\phi=0.6$ match what you see on PACF for ARMA(1,0), and ARMA(1,1)? Should they match?
+```{r}
+print(Pacf(ARMA10, lag.max = 10))
+print(Pacf(ARMA11, lag.max = 10))
+```
+
+> Answer: The PACF values for ARMA (1,0) and ARMA(1,1) do not match. This is expected because while the ARMA(1,1) model does incorporate the AR component with the 0.6 coefficient and error term, it also includes the MA component and it's coefficient (0.9). 
 
 (f) Increase number of observations to $n=1000$ and repeat parts (b)-(e).
 
@@ -128,31 +136,29 @@ autoplot(ARMA11.b)+
 ```{r}
 #b
 plot_grid(
-  autoplot(Acf(ARMA10.b, lag.max=40),main = "ARMA(1,0)"),
-  autoplot(Acf(ARMA01.b, lag.max=40), main = "ARMA(0,1)"),
-  autoplot(Acf(ARMA11.b, lag.max=40),main = "ARMA(1,1)") 
+  autoplot(Acf(ARMA10.b, lag.max=40, plot = FALSE),main = "ARMA(1,0)"),
+  autoplot(Acf(ARMA01.b, lag.max=40, plot = FALSE), main = "ARMA(0,1)"),
+  autoplot(Acf(ARMA11.b, lag.max=40, plot = FALSE),main = "ARMA(1,1)") 
 )
 ```
 
 ```{r}
 #c
 plot_grid(
-  autoplot(Pacf(ARMA10.b, lag.max=40),main = "ARMA(1,0)"),
-  autoplot(Pacf(ARMA01.b, lag.max=40), main = "ARMA(0,1)"),
-  autoplot(Pacf(ARMA11.b, lag.max=40),main = "ARMA(1,1)") 
+  autoplot(Pacf(ARMA10.b, lag.max=40, plot = FALSE),main = "ARMA(1,0)"),
+  autoplot(Pacf(ARMA01.b, lag.max=40, plot = FALSE), main = "ARMA(0,1)"),
+  autoplot(Pacf(ARMA11.b, lag.max=40, plot = FALSE),main = "ARMA(1,1)") 
 )
-
-print(Pacf(ARMA10.b, lag.max = 10))
-print(Pacf(ARMA11.b, lag.max = 10))
 ```
- >d) For the ARMA(1,0) model, the identification is obvious again as AR(1) because of the cut off at lag 1 in the PACF and the slow decay in the ACF. The ARMA(0,1) likely would have confused me because it looks like the ACF has 2 signficant peaks and then drops off (which would indicate MA(2)). The ARMA(1,1) is very clearly ARMA because there is a clear slow decay for both the ACF and PACF.
+ 
+ d) For the ARMA(1,0) model, the identification is obvious as AR(1) because of the cut off at lag 1 in the PACF and the slow decay in the ACF. The ARMA(0,1) ACF has one significant peak, and, not very distinct but present, slow decline in the PACF, so I would have identified it as MA(1). The ARMA(1,1) is very clearly ARMA because there is a clear slow decay for both the ACF and PACF. Overall a higher n yielded more easily identifiable models. 
  
 ```{r}
 #e
 print(Pacf(ARMA10.b, lag.max = 10))
 print(Pacf(ARMA11.b, lag.max = 10))
 ```
->Again, the PACF values at lag 1 for ARMA(1,0) and ARMA(1,1) are not equal. However, the ARMA(1,0) lag 1 value is now exactly 0.6. 
+e) Again, the PACF values at lag 1 for ARMA(1,0) and ARMA(1,1) are not equal.  
  
  
 ## Q3
@@ -161,31 +167,46 @@ Consider the ARIMA model $y_t=0.7*y_{t-1}-0.25*y_{t-12}+a_t-0.1*a_{t-1}$
 
 (a) Identify the model using the notation ARIMA$(p,d,q)(P,D,Q)_ s$, i.e., identify the integers $p,d,q,P,D,Q,s$ (if possible) from the equation.
 
-
-p = 1
-P = 1
-q = 1
-
-### No constant so d or D?
-
+ARIMA(1,1,1)(1,1,0)
 
 (b) Also from the equation what are the values of the parameters, i.e., model coefficients.
+
 AR coefficient = 0.7, 
 SAR coefficient = -0.25
-MA coefficient = -0.1
+MA coefficient = 0.1
+
 ## Q4
 
 Simulate a seasonal ARIMA$(0, 1)\times(1, 0)_{12}$ model with $\phi =0 .8$ and $\theta = 0.5$ using the `sim_sarima()` function from package `sarima`. The $12$ after the bracket tells you that $s=12$, i.e., the seasonal lag is 12, suggesting monthly data whose behavior is repeated every 12 months. You can generate as many observations as you like. Note the Integrated part was omitted. It means the series do not need differencing, therefore $d=D=0$. Plot the generated
 series using `autoplot()`. Does it look seasonal?
 
 ```{r}
+sarima <- sim_sarima(n = 100, model = list(
+    ma = 0.8,
+    sar = 0.5,
+    nseasons = 12
+  )
+)
 
+#sim_sarima() gave me a numeric vector and autoplot requires a ts object
+ts_sarima<-ts(sarima, frequency = 12)
+
+autoplot(ts_sarima)+
+  ggtitle("SARMA(0,1)(1,0)")+
+  ylab("Generated Series")
 ```
+
+The resulting plot does not look distinctly seasonal. There are peaks and troughs but they vary quite a bit as far as magnitude, slope, and frequency. 
 
 ## Q5
 
 Plot ACF and PACF of the simulated series in Q4. Comment if the plots are well representing the model you simulated, i.e., would you be able to identify the order of both non-seasonal and seasonal components from the plots? Explain.
 
 ```{r}
-
+plot_grid(
+  autoplot(Acf(ts_sarima, lag.max=40, plot = FALSE),main = "SARMA(0,1)(1,0)"),
+  autoplot(Pacf(ts_sarima, lag.max=40, plot = FALSE),main = "SARMA(0,1)(1,0)")
+)
 ```
+
+I would not have been able to identify the order because for the seasonal component, a seasonal AR component would show positive spikes at each of the seasonal marks (12, 24, etc) and only one positive spike in the PACF at lag 12. While the ACF and PACF have positive spikes, they don't show the expected pattern. The non-seasonal component would have been difficult to identify because there is no clear cut off in the ACF or slow decay in the PACF as I would expect for the non-seasonal MA component. 
