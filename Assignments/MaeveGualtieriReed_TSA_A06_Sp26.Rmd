@@ -43,11 +43,11 @@ Describe the important characteristics of the sample autocorrelation function (A
 
 * AR(2)
 
-> Answer: The ACF will likely show a slow decay. The PACF will have a cut off at lag 2.
+> Answer: The ACF will likely show an exponential decay. The PACF will have a cut off at lag 2.
 
 * MA(1)
 
-> Answer: The ACF will have a significant value at lag 1. After that the values may oscillate but will not be significant. The PACF may show a slow decay.
+> Answer: The ACF will have a significant value at lag 1. After that the values may oscillate but will not be significant. The PACF may show an exponential decay.
 
 ## Q2
 
@@ -56,7 +56,7 @@ Recall that the non-seasonal ARIMA is described by three parameters ARIMA$(p,d,q
 (a) Consider three models: ARMA(1,0), ARMA(0,1) and ARMA(1,1) with parameters $\phi=0.6$ and $\theta= 0.9$. The $\phi$ refers to the AR coefficient and the $\theta$ refers to the MA coefficient. Use the `arima.sim()` function in R to generate $n=100$ observations from each of these three models. Then, using `autoplot()` plot the generated series in three separate graphs.
 
 ```{r}
-ARMA10 <- arima.sim(list(order=c(1,0,0),ar=c(0.6)),n=100)
+ARMA10 <- arima.sim(list(order=c(1,0,0),ar=c(0.6)),n=100) #don't have to specify the order because specifying the coefficients tells the function what order
 ARMA01 <- arima.sim(list(order=c(0,0,1),ma=c(0.9)),n=100)
 ARMA11 <- arima.sim(list(order=c(1,0,1),ar=c(0.6),ma=c(0.9)),n=100)
 
@@ -181,7 +181,7 @@ Simulate a seasonal ARIMA$(0, 1)\times(1, 0)_{12}$ model with $\phi =0 .8$ and $
 series using `autoplot()`. Does it look seasonal?
 
 ```{r}
-sarima <- sim_sarima(n = 100, model = list(
+sarima <- sim_sarima(n = 1000, model = list(
     ma = 0.8,
     sar = 0.5,
     nseasons = 12
