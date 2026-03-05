@@ -1,9 +1,11 @@
 ---
 title: "ENV 797 - Time Series Analysis for Energy and Environment Applications | Spring 2026"
 subtitle: "Assignment 7 - Due date 03/06/26"
-author: "Student Name"
+author: "Maeve Gualtieri-Reed"
 output: pdf_document
 geometry: margin=2.54cm
+editor_options: 
+  chunk_output_type: console
 ---
 
 ## Directions
@@ -22,7 +24,11 @@ Packages needed for this assignment: "forecast","tseries". Do not forget to load
 
 ```{r}
 #Load/install required package here
-
+library(forecast)  
+library(tseries)
+library(tidyverse)
+library(lubridate)
+library(cowplot)
 ```
 
 ## Importing and processing the data set
@@ -35,7 +41,32 @@ Consider the data from the file "Net_generation_United_States_all_sectors_monthl
 Import the csv file and create a time series object for natural gas. Make you sure you specify the **start=** and **frequency=** arguments. Plot the time series over time, ACF and PACF.
 
 ```{r}
+net_generation <- read.csv(file="./Data/Net_generation_United_States_all_sectors_monthly.csv",header=TRUE,skip=4)
 
+ng_generation <-
+  net_generation %>%
+  select(Month, natural.gas.thousand.megawatthours) %>% 
+  mutate( Month = my(Month)) %>% 
+  rename( NG = natural.gas.thousand.megawatthours) %>% 
+  arrange(Month)
+
+nvar <- ncol(ng_generation) - 1
+nobs <- nrow(ng_generation)
+
+ts_ng <- ng_generation %>% 
+  select(NG) %>% 
+  ts(start=c(1973,1),frequency=12)
+
+plot_grid(
+  autoplot(ts_ng) +
+    xlab("Time") +
+    ylab("Natural Gas (Thousand MWh)")+
+    ggtitle("Net US Natural Gas Generation"),
+  autoplot(Acf(ts_ng, lag.max = 40, plot=FALSE))+
+    ggtitle (""),
+  autoplot(Pacf(ts_ng, lag.max = 40, plot=FALSE))+    
+    ggtitle ("")
+) 
 ```
 
 ### Q2

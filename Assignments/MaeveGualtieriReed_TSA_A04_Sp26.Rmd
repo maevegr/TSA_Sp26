@@ -180,7 +180,7 @@ Aggregate the original "Total Renewable Energy Production" series by year. You c
 #take the mean of each year
 renew_matrix <- matrix(ts_renewable,byrow=FALSE,nrow=12)
 renew_data_yearly <- colMeans(renew_matrix)
-ts_yearly <- ts(renew_data_yearly,start=c(1973,1), 
+ts_yearly <- ts(renew_data_yearly,start=c(2001,1), 
                      frequency=1)
 
 yearly_plot<- autoplot(ts_yearly) +

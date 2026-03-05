@@ -129,16 +129,22 @@ These three function take a few main arguments:
 
 ```{r}
 #Model 1: Arithmetic mean on original data
-
+mean_seas <- meanf(ts_electricity_price[,"All.sectors"], h=36)
+#mean is the point forecast
+plot(mean_seas)
 
 #Model 2: Arithmetic mean on deseas data
-
+mean_deseas <- meanf(deseasonal_allsectors_price, h=36)
+plot(mean_deseas)
 
 #Model 3: Seasonal naive on original data
-
+naive_seas <- snaive(ts_electricity_price[,"All.sectors"], h=36)
+plot(naive_seas)
+#assumes that whatever happened in the past will repeast in the future
 
 #Model 4: Naive on deseas data
-
+naive_deseas <- snaive(deseasonal_allsectors_price, h=36)
+plot(naive_deseas)
 
 ```
 
@@ -170,10 +176,12 @@ We will try these models on the original dataset and the deaseason electricity p
 
 ```{r}
 # Model 5: Simple moving average on deseasonal data
-
+sma_deseas <- sma(deseasonal_allsectors_price, h=36)
+plot(sma_deseas$forecast)
 
 # Model 6: Simple moving average on original data
-
+sma_seas <- sma(ts_electricity_price[,"All.sectors"], h=36)
+plot(sma_seas$forecast)
 
 # Model 7:  Simple exponential smoothing on deseasonal data
 
