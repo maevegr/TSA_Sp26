@@ -29,6 +29,7 @@ library(tseries)
 library(tidyverse)
 library(lubridate)
 library(cowplot)
+library(Kendall)
 ```
 
 ## Importing and processing the data set
@@ -41,8 +42,8 @@ Consider the data from the file "Net_generation_United_States_all_sectors_monthl
 Import the csv file and create a time series object for natural gas. Make you sure you specify the **start=** and **frequency=** arguments. Plot the time series over time, ACF and PACF.
 
 ```{r}
-net_generation <- read.csv(file="./Data/Net_generation_United_States_all_sectors_monthly.csv",header=TRUE,skip=4)
-
+#net_generation <- read.csv(file="./Data/Net_generation_United_States_all_sectors_mo#nthly.csv",header=TRUE,skip=4)
+net_generation<-Net_generation_United_States_all_sectors_monthly
 ng_generation <-
   net_generation %>%
   select(Month, natural.gas.thousand.megawatthours) %>% 
@@ -75,7 +76,23 @@ Using the $decompose()$ and the $seasadj()$ functions create a series without th
 
 ```{r}
 
+decompose_ng <- decompose(ts_ng,"additive")
+plot(decompose_ng)
+deseasonal_ng<- seasadj(decompose_ng)  
+
+plot_grid(
+  autoplot(deseasonal_ng) +
+    xlab("Time") +
+    ylab("Natural Gas (Thousand MWh)")+
+    ggtitle("Net US Natural Gas Generation - Deseasoned"),
+  autoplot(Acf(deseasonal_ng, lag.max = 40, plot=FALSE))+
+    ggtitle (""),
+  autoplot(Pacf(deseasonal_ng, lag.max = 40, plot=FALSE))+    
+    ggtitle ("")
+) 
 ```
+
+The deseasoned plotted series still shows an upward trend and some variability but the clear large peak followed by smaller peak pattern is no longer there. The ACF does not have the seasonal fluctuations seen in the seasoned ACF and the deseasonal PACF has a clear cut off after lag 1 with no peaks outside of the blue dashed lines after. There is still a clear trend component that we will need to difference (the ACF shows a slow decay rather than an exponential)
 
 ## Modeling the seasonally adjusted (i.e., the deseasonalized series)
 
@@ -84,28 +101,84 @@ Using the $decompose()$ and the $seasadj()$ functions create a series without th
 Run the ADF test and Mann Kendall test on the deseasonalized data from Q2. Report and explain the results.
 
 ```{r}
+SMK_deseason<- SeasonalMannKendall(deseasonal_ng)
+SMK_deseason
+
+ADF_deseason<- adf.test(deseasonal_ng, alternative = "stationary")
+ADF_deseason
 
 ```
+The seasonal Mann Kendall resulted in a significant p value indicating that there is a trend in the data. The ADF resulted in a significant p value which means we will reject our null hypothesis that there is a unit root and conclude that this is a stationary trend. Because it is a stationary trend, I can either use differencing or regression. 
 
 ### Q4
 
 Using the plots from Q2 and test results from Q3 identify the ARIMA model parameters $p,d$ and $q$. Note that in this case because you removed the seasonal component prior to identifying the model you don't need to worry about seasonal component. Clearly state your criteria and any additional function in R you might use. DO NOT use the $auto.arima()$ function. You will be evaluated on ability to understand the ACF/PACF plots and interpret the test results.
 
+#### confirm I cant tell order from ACF/PACF
+
 ```{r}
+# Differencing is needed since the ACF shows a slow decay instead of exponential, but need to determine how many times we should difference
+n_diff <- ndiffs(deseasonal_ng)
+cat("Number of differencing needed: ",n_diff)
+
+deseasonal_diff_ng <- diff(deseasonal_ng,differences=n_diff,lag=1)
+plot_grid(
+  autoplot(deseasonal_diff_ng) +
+    xlab("Time") +
+    ylab("Natural Gas (Thousand MWh)")+
+    ggtitle("Net US Natural Gas Generation - Deseasoned and Differenced"),
+  autoplot(Acf(deseasonal_diff_ng, lag.max = 40, plot=FALSE))+
+    ggtitle (""),
+  autoplot(Pacf(deseasonal_diff_ng, lag.max = 40, plot=FALSE))+    
+    ggtitle ("")
+) 
+
+#I don't see a cut off in ACF or PACF and exponential trend in the other, so this must have AR and MA components. I will need to test a few options and compare their AIC. I do know that d = 1 because of the ndiff() function.
+
+#ARIMA (1,1,1)
+Model_111 <- Arima(deseasonal_ng,order=c(1,1,1),include.drift=TRUE)
+compare_aic <- data.frame(Model_111$aic) 
+checkresiduals(Model_111)
+
+#ARIMA(0,1,1)
+Model_011 <- Arima(deseasonal_ng,order=c(0,1,1),include.drift=TRUE)
+compare_aic <-  data.frame(compare_aic,Model_011$aic)
+
+#ARIMA(1,1,0)
+Model_110 <- Arima(deseasonal_ng,order=c(1,1,0),include.drift=TRUE)
+compare_aic <-  data.frame(compare_aic,Model_110$aic)
+
+#ARIMA(2,1,1)
+Model_211 <- Arima(deseasonal_ng,order=c(2,1,1),include.drift=TRUE)
+compare_aic <-  data.frame(compare_aic,Model_211$aic)
+
+#ARIMA(1,1,2)
+Model_112 <- Arima(deseasonal_ng,order=c(1,1,2),include.drift=TRUE)
+compare_aic <-  data.frame(compare_aic,Model_112$aic)
+
+compare_aic
 
 ```
+I know that d = 1 because the ADF and Mann-Kendall tests indicated that there is a stationary trend and ndiff() told me diff = 1, but because the PACF and ACF did not show a clear cut off/exponential decay, I tested a few models and compared their AIC values to determine p and q. The ARIMA(1,1,1) had the lowest AIC and its residuals seem to be randomly and normally distributed.  Therefore I will estimate that p = 1, d = 1, q = 1.
 
 ### Q5
 
 Use `Arima()` from package "forecast" to fit an ARIMA model to your series considering the order estimated in Q4. You should allow constants in the model, i.e., `include.mean = TRUE` or `include.drift=TRUE`. **Print the coefficients** in your report. Hint: use the `cat()` or `print()` function to print.
 
+#### Only getting one coef?
 ```{r}
-
+Model_111$coef
 ```
 
 ### Q6
 
 Now plot the residuals of the ARIMA fit from Q5 along with residuals ACF on the same window. You may use the $checkresiduals()$ function to get the plots. Do the residual series look like a white noise series? Why?
+
+#### why is it returning residuals from ARIMA(0,1,1) 
+```{r}
+checkresiduals(Model_111)
+```
+
 
 ## Modeling the original series (with seasonality)
 
@@ -114,18 +187,79 @@ Now plot the residuals of the ARIMA fit from Q5 along with residuals ACF on the 
 Repeat Q3-Q6 for the original series (the complete series that has the seasonal component). Note that when you model the seasonal series, you need to specify the seasonal part of the ARIMA model as well, i.e., $P$, $D$ and $Q$.
 
 ```{r}
+ns_diff <- nsdiffs(ts_ng)
+n_diff_original <- ndiffs(ts_ng)
+cat("Seasonal differences: ",ns_diff,
+    " | Non-seasonal differences:", n_diff_original)
+
+ng_seas_diff <- diff(ts_ng,lag=12, differences=1)
+ng_trend_diff <- diff(ts_ng,lag =1, differences=1) 
+ng_both_diff <- diff(ng_trend_diff,lag =12, differences=1)
+
+#Comparing ACFs
+plot_grid(
+  autoplot(Acf(ts_ng,lag.max=60,plot=FALSE),
+           main="Total Generation",
+           ylim=c(-1,1)),
+  autoplot(Acf(ng_seas_diff,lag.max=60,plot=FALSE),
+           main="Seasonal-Differenced",
+           ylim=c(-1,1)),
+  autoplot(Acf(ng_trend_diff,lag.max=60,plot=FALSE),
+           main="Trend-Differenced",
+           ylim=c(-1,1)),
+  autoplot(Acf(ng_both_diff,lag.max=60,plot=FALSE),
+           main="Twice-Differenced",
+           ylim=c(-1,1)),
+  nrow=2,ncol=2
+)
+
+
+#Comparing PACFs
+plot_grid(
+  autoplot(Pacf(ts_ng,lag.max=60,plot=FALSE),
+           main="Total Generation",
+           ylim=c(-1,1)),
+  autoplot(Pacf(ng_seas_diff,lag.max=60,plot=FALSE),
+           main="Seasonal-Differenced",
+           ylim=c(-1,1)),
+  autoplot(Pacf(ng_trend_diff,lag.max=60,plot=FALSE),
+           main="Trend-Differenced",
+           ylim=c(-1,1)),
+  autoplot(Pacf(ng_both_diff,lag.max=60,plot=FALSE),
+           main="Twice-Differenced",
+           ylim=c(-1,1)),
+  nrow=2,ncol=2
+)
+
+plot_grid(
+  autoplot(Pacf(ng_both_diff,lag.max=60,plot=FALSE),
+           main="Twice-Differenced",
+           ylim=c(-1,1)),
+  autoplot(Acf(ng_both_diff,lag.max=60,plot=FALSE),
+           main="Twice-Differenced",
+           ylim=c(-1,1))
+)
 
 ```
+#### am I using the correct ACF and PACF plots to identify order? Twice differenced for seasonal, seasonal differenced for non seasonal?
 
+**Seasonal component:** From nsdiffs, we know that D = 1. The ACF of the twice differenced series, has one negative spike and the twice differenced PACF has negative spikes at 12, 36, 36. This is a characteristic of SMA so Q = 1. Q+P = 0 so P must = 0. 
+**Non-seasonal component:**From ndiffs, we know that d = 1 The PACF of the seasonal-differenced series cuts off and the ACF is a slow decay indicating that this is AR (p = 1, q = 0). 
 
+Therefore, the estimated model is SARIMA(1,1,0)(0,1,1)
 ### Q8
 
 Compare the residual series for Q7 and Q6. Can you tell which ARIMA model is better representing the Natural Gas Series? Is that a fair comparison? Explain your response.
-
 ```{r}
+SARIMA_110011 <- Arima(ts_ng,
+                       order=c(1,1,0),
+                       seasonal=c(0,1,1),
+                       include.drift=FALSE)
+checkresiduals(SARIMA_110011)
+checkresiduals(Model_111)
 
 ```
-
+The residuals do not look significantly different between the ARIMA(1,1,1) and SARIMA(1,1,0,0,1,1). This is not a fair comparison because in the ARIMA model we completely removed the seasonal component so we aren't comparing how the ARIMA model compares to the actual data but to the deseasoned data. There might be a lot more variability that the model does not capture even with the seasonal component added back in.  
 
 ## Checking your model with the auto.arima()
 
@@ -136,15 +270,20 @@ Compare the residual series for Q7 and Q6. Can you tell which ARIMA model is bet
 Use the $auto.arima()$ command on the **deseasonalized series** to let R choose the model parameter for you. What's the order of the best ARIMA model? Does it match what you specified in Q4?
 
 ```{r}
-
+ARIMA_autofit <- auto.arima(deseasonal_ng)
+print(ARIMA_autofit)
 ```
-
+The order of the best ARIMA model is ARIMA(1,1,1), which matches what I specified in Q4.
 
 ### Q10
 
 Use the $auto.arima()$ command on the **original series** to let R choose the model parameters for you. Does it match what you specified in Q7?
 
 ```{r}
-
+SARIMA_autofit <- auto.arima(ts_ng)
+print(SARIMA_autofit)
 ```
 
+The order of the best SARIMA model is SARIMA(1,0,0)(0,1,1). This matches the p,q,P,D,Q parameters, but d = 0 for this model while I specified d = 1 in mine. 
+
+#### signs of over differencing?
