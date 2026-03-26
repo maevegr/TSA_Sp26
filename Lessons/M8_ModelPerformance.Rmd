@@ -23,9 +23,9 @@ Second R code chunk is for loading packages. By setting message = FALSE, the cod
 library(lubridate)
 library(ggplot2)
 library(forecast)  
-#library(Kendall)
+library(Kendall)
 library(tseries)
-#library(outliers)
+library(outliers)
 library(tidyverse)
 library(smooth)
 
@@ -225,6 +225,17 @@ kbl(seas_scores,
 Create a code that plots all forecasted values and observed values together.
 
 ```{r}
+#create ts object for full data set
+ts_electricity_price_full <- ts(
+  electricity_price_processed[1:nobs,"All.sectors"],
+  start=c(year(electricity_price_processed$Month[1]),month(electricity_price_processed$Month[1])),
+  frequency=12) 
+
+autoplot(ts_electricity_price_full)+
+  autolayer(MEAN_seas, series = "Mean",PI = FALSE)+
+  autolayer(SNAIVE_seas, series = "Naive", PI = FALSE)+
+  autolayer(SARIMA_for, series = "SARIMA", PI = FALSE)
+
 
 
 ```

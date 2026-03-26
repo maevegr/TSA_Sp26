@@ -109,7 +109,7 @@ ADF_deseason<- adf.test(deseasonal_ng, alternative = "stationary")
 ADF_deseason
 
 ```
-The seasonal Mann Kendall resulted in a significant p value indicating that there is a trend in the data. The ADF resulted in a significant p value which means we will reject our null hypothesis that there is a unit root and conclude that this is a stationary trend. Because it is a stationary trend, I can either use differencing or regression. 
+The seasonal Mann Kendall resulted in a significant p value indicating that there is a trend in the data. The ADF resulted in a significant p value which means we will reject our null hypothesis that there is a unit root and conclude that this is a deterministic trend. Because it is a deterministic trend, I can either use differencing or regression. 
 
 ### Q4
 
@@ -160,7 +160,7 @@ compare_aic <-  data.frame(compare_aic,Model_112$aic)
 compare_aic
 
 ```
-I know that d = 1 because the ADF and Mann-Kendall tests indicated that there is a stationary trend and ndiff() told me diff = 1, but because the PACF and ACF did not show a clear cut off/exponential decay, I tested a few models and compared their AIC values to determine p and q. The ARIMA(1,1,1) had the lowest AIC and its residuals seem to be randomly and normally distributed.  Therefore I will estimate that p = 1, d = 1, q = 1.
+I know that d = 1 because the ADF and Mann-Kendall tests indicated that there is a deterministic trend and ndiff() told me diff = 1, but because the PACF and ACF did not show a clear cut off/exponential decay, I tested a few models and compared their AIC values to determine p and q. The ARIMA(1,1,1) had the lowest AIC and its residuals seem to be randomly and normally distributed.  Therefore I will estimate that p = 1, d = 1, q = 1.
 
 ### Q5
 
@@ -180,6 +180,8 @@ Now plot the residuals of the ARIMA fit from Q5 along with residuals ACF on the 
 checkresiduals(Model_111)
 ```
 It seems like a white noise series which is expected because we have removed seasonality and trend. The residuals are normally distributed and the residuals plot does not show any obvious patterns. There are a few outliers that may indicate that this model is not ideal. 
+
+The ACF and L-jung test indicates there is still some temporal dependence
 
 ## Modeling the original series (with seasonality)
 
@@ -259,6 +261,8 @@ plot_grid(
 
 Therefore, the estimated model is SARIMA(1,1,0)(0,1,1)
 
+This is a better model than ARIMA(1,1,1) because the Ljung test in the SARIMA indicates there is not additional temporal dependence while the ARIMA model Ljung test indicates continued temporal dependence.
+
 ```{r}
 SARIMA_110011 <- Arima(ts_ng,
                        order=c(1,1,0),
@@ -303,4 +307,6 @@ print(SARIMA_autofit)
 ```
 
 The order of the best SARIMA model is SARIMA(1,0,0)(0,1,1). This matches the p,q,P,D,Q parameters, but d = 0 for this model while I specified d = 1 in mine. My decision to difference twice was based on ndiffs/sndiffs as well as examining the ACF of the trend differenced series and seeing that it still showed a clear seasonal trend. However, I should have run the SMK and MK on the raw data before proceeding to ndiffs()
+
+Don't need differencing because the ACF is much faster in the seasonal differenced. should have done ndiffs on the seasonal differenced rather than the original.
 
