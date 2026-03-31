@@ -4,7 +4,7 @@ author: "Luana Lima"
 output: pdf_document
 always_allow_html: true
 editor_options: 
-  chunk_output_type: inline
+  chunk_output_type: console
   markdown: 
     wrap: sentence
 ---
@@ -201,7 +201,7 @@ ts_act_power_hourly <- msts(act_power_hourly$hourly_mean_active_power,
                             start=c(2006,12,16)) #specify the hour
 
 ts_act_power_daily <- msts(act_power_daily$daily_mean_active_power, 
-                           seasonal.periods =c(7,365.25),
+                           seasonal.periods =c(7,365.25), #7 = weekly, 365.25 = yearly
                            start=c(2006,12,16))
 
 ```
