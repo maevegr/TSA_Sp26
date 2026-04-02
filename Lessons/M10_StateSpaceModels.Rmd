@@ -175,6 +175,7 @@ Notice the residual series seems to be random and ACF shows no significant self 
 Let's start by trying an exponential smoothing under the state space model. In the videos we went over the state equation for level only. But the ES can be used to represent trend and seasonal as well, these are know as ETS (Exponential Trend and Seasonal) models. We will talk in more details on M10.
 
 ```{r}
+#Z automatically fits as additive or multiplicative
 SSES_seas <- es(ts_price_train,model="ZZZ",h=n_for,holdout=FALSE)
 plot(SSES_seas)
 checkresiduals(SSES_seas)
@@ -192,6 +193,8 @@ The function takes a few arguments, here are the important ones:
 
 
 ```{r}
+#let the model choose variance values with NA
+#see seasonality in ACF plot for residuals
 SS_seas <- StructTS(ts_price_train,
                     type="BSM",fixed=c(NA,NA,NA,NA))   #this function has convergence issues
 checkresiduals(SS_seas)
@@ -199,7 +202,7 @@ checkresiduals(SS_seas)
 
 ```{r}
 SS_seas <- StructTS(ts_price_train ,
-                    type="BSM",fixed=c(0.1,0.01,0.3,NA)) 
+                    type="BSM",fixed=c(0.1,0.01,0.3,NA)) #manually adjust the coefficients until you pass the residuals check
 
 #this function has convergence issues
 checkresiduals(SS_seas)
